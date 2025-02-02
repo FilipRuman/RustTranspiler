@@ -41,6 +41,26 @@ pub enum TokenKind {
 
     Eof,
     Number,
+    NextLine,
+    Comment,
+    String,
+    Identifier,
+
+    Var,
+    Const,
+    Fn,
+    Enum,
+    Class,
+    Public,
+    Mod,
+    As,
+    New,
+    Import,
+    For,
+    In,
+    If,
+    Else,
+    While,
 }
 pub struct Token {
     pub kind: TokenKind,

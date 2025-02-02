@@ -1,1 +1,18 @@
-5 + 205 *(3- -2+-2)/4;
+class TestScript
+{
+
+    fn main()
+    {
+        var testText = "testText";
+        values(testText);
+    }
+
+    fn values(string testText)
+    {
+        for i in 0..100{
+            print(testText + i);
+        }
+    }
+
+
+}

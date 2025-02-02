@@ -1,6 +1,8 @@
 use std::fs;
 
+#[path = "lexer/lexer.rs"]
 mod lexer;
+#[path = "lexer/tokens.rs"]
 mod tokens;
 
 const inputFilePath: &str = "./CompileTargets/Input.lang";
