@@ -1,6 +1,10 @@
 use crate::tokens::*;
 use core::str;
-use std::{cmp, collections::HashMap, ptr::null};
+use std::{
+    cmp,
+    collections::{HashMap, HashSet},
+    ptr::null,
+};
 
 struct Pattern {
     kind: TokenKind,
@@ -35,9 +39,10 @@ pub struct Lexer {
     tokens: Vec<Token>,
     pub source: Vec<String>,
     pos: u16,
+    blackList: Vec<TokenKind>,
 }
 impl Lexer {
-    pub fn new(source: String) -> Lexer {
+    pub fn new(source: String, blackList: Vec<TokenKind>) -> Lexer {
         // I create those regexes by hand in code so I don't have to worry about errors in creating regexes
         let split = source.split("").map(|s| s.to_string());
         let mut source: Vec<String> = Vec::new();
@@ -50,6 +55,7 @@ impl Lexer {
             tokens: Vec::new(),
             source,
             pos: 0,
+            blackList,
         }
     }
     fn getPatterns() -> Vec<Pattern> {
@@ -96,7 +102,9 @@ impl Lexer {
     }
 
     pub fn push(&mut self, token: Token) {
-        self.tokens.push(token);
+        if !self.blackList.contains(&token.kind) {
+            self.tokens.push(token);
+        }
     }
     fn at(&self) -> String {
         return self.source[self.pos as usize].to_string();
@@ -121,8 +129,8 @@ impl Lexer {
     }
 }
 
-pub fn tokenize(source: String) -> Vec<Token> {
-    let mut lexer = Lexer::new(source);
+pub fn tokenize(source: String, blackList: Vec<TokenKind>) -> Vec<Token> {
+    let mut lexer = Lexer::new(source, blackList);
     let patterns = Lexer::getPatterns();
     let reserved_symbols = reserved_symbols();
 
@@ -163,6 +171,7 @@ pub fn tokenize(source: String) -> Vec<Token> {
     });
     return lexer.tokens;
 }
+
 fn handle_comments(lexer: &mut Lexer) {
     println!("handle_comments");
     let mut value = String::new();
