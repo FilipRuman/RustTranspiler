@@ -1,10 +1,6 @@
 use crate::tokens::*;
 use core::str;
-use std::{
-    cmp,
-    collections::{HashMap, HashSet},
-    ptr::null,
-};
+use std::{cmp, collections::HashMap};
 
 struct Pattern {
     kind: TokenKind,
@@ -283,6 +279,12 @@ fn handle_standard_pattern_tokenization(
 
 pub fn reserved_symbols() -> HashMap<String, TokenKind> {
     return HashMap::from([
+        ("i32".to_string(), TokenKind::I32),
+        ("i64".to_string(), TokenKind::I64),
+        ("f32".to_string(), TokenKind::F32),
+        ("f64".to_string(), TokenKind::F64),
+        ("mut".to_string(), TokenKind::Mut),
+        ("str".to_string(), TokenKind::Str),
         ("var".to_string(), TokenKind::Var),
         ("const".to_string(), TokenKind::Const),
         ("enum".to_string(), TokenKind::Enum),
@@ -332,5 +334,6 @@ fn handle_number_tokenization(lexer: &mut Lexer) {
 }
 const NUMBERS: [&str; 10] = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"];
 fn isNumber(char: &String) -> bool {
-    return NUMBERS.contains(&(char.as_str()));
+    let charStr = char.as_str();
+    return NUMBERS.contains(&(charStr)) || charStr == ".";
 }

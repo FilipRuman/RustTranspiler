@@ -1,4 +1,4 @@
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum TokenKind {
     WhiteSpace,
     OpenBracket,
@@ -61,7 +61,16 @@ pub enum TokenKind {
     If,
     Else,
     While,
+
+    I32,
+    I64,
+    F32,
+    F64,
+    Str,
+    Mut,
 }
+#[derive(Debug, Clone)]
+
 pub struct Token {
     pub kind: TokenKind,
     pub value: String,
