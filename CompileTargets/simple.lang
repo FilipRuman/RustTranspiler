@@ -1,1 +1,11 @@
-16.69 * 666 - 420 +2137;
+f32 otherName = 16.6 * 666 /(-  420 - -2137);
+str foo = "yo mom";
+i32 integer = 10-1 ;
+
+integer += 200;
+integer = integer + 99;
+
+bool isGreater = integer > 100;
+
+// Comment!
+

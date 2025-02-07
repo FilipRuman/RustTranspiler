@@ -27,6 +27,7 @@ impl Pattern {
         lex.push(Token {
             kind: self.kind.clone(),
             value: self.valueString.clone(),
+            line: lex.current_line,
         });
     }
 }
@@ -35,6 +36,7 @@ pub struct Lexer {
     tokens: Vec<Token>,
     pub source: Vec<String>,
     pos: u16,
+    current_line: u16,
     blackList: Vec<TokenKind>,
 }
 impl Lexer {
@@ -52,6 +54,7 @@ impl Lexer {
             source,
             pos: 0,
             blackList,
+            current_line: 0,
         }
     }
     fn getPatterns() -> Vec<Pattern> {
@@ -94,6 +97,12 @@ impl Lexer {
     }
 
     pub fn advance(&mut self, amount: u16) {
+        for i in self.pos..self.pos + amount {
+            if self.source[i as usize] == "\n" {
+                self.current_line += 1;
+            }
+        }
+
         self.pos += amount;
     }
 
@@ -164,12 +173,13 @@ pub fn tokenize(source: String, blackList: Vec<TokenKind>) -> Vec<Token> {
     lexer.push(Token {
         kind: TokenKind::Eof,
         value: "Eof".to_string(),
+        line: lexer.current_line,
     });
     return lexer.tokens;
 }
 
 fn handle_comments(lexer: &mut Lexer) {
-    println!("handle_comments");
+    // println!("handle_comments");
     let mut value = String::new();
     let mut currentIndex = lexer.pos as usize;
     while currentIndex < lexer.source.len() {
@@ -181,19 +191,22 @@ fn handle_comments(lexer: &mut Lexer) {
         value += &char.to_string();
     }
     // println!("Match {:?}", &value);
+
     lexer.advance(value.len() as u16);
     lexer.push(Token {
         kind: TokenKind::Comment,
         value,
+        line: lexer.current_line,
     });
     lexer.advance(1 as u16);
     lexer.push(Token {
         kind: TokenKind::NextLine,
         value: "\n".to_string(),
+        line: lexer.current_line,
     });
 }
 fn handle_strings(lexer: &mut Lexer) {
-    println!("handle_strings");
+    // println!("handle_strings");
     let mut value = "\"".to_string();
     let mut currentIndex = (lexer.pos + 1) as usize;
     while currentIndex < lexer.source.len() {
@@ -210,6 +223,7 @@ fn handle_strings(lexer: &mut Lexer) {
     lexer.push(Token {
         kind: TokenKind::String,
         value,
+        line: lexer.current_line,
     });
 }
 fn handle_symbols(lexer: &mut Lexer, reserved_symbols: &HashMap<String, TokenKind>) {
@@ -218,7 +232,7 @@ fn handle_symbols(lexer: &mut Lexer, reserved_symbols: &HashMap<String, TokenKin
     value += &lexer.at();
     while currentIndex < lexer.source.len() {
         let char = &lexer.source[currentIndex];
-        println!("handle_symbols {:?} {}", char, isSymbol(char, false));
+        // println!("handle_symbols {:?} {}", char, isSymbol(char, false));
 
         currentIndex += 1;
 
@@ -235,11 +249,13 @@ fn handle_symbols(lexer: &mut Lexer, reserved_symbols: &HashMap<String, TokenKin
         Some(x) => lexer.push(Token {
             kind: x.clone(),
             value,
+            line: lexer.current_line,
         }),
         // The division was invalid
         None => lexer.push(Token {
             kind: TokenKind::Identifier,
             value,
+            line: lexer.current_line,
         }),
     }
 }
@@ -330,6 +346,7 @@ fn handle_number_tokenization(lexer: &mut Lexer) {
     lexer.push(Token {
         kind: TokenKind::Number,
         value,
+        line: lexer.current_line,
     });
 }
 const NUMBERS: [&str; 10] = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"];

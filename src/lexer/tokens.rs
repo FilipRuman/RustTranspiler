@@ -74,6 +74,7 @@ pub enum TokenKind {
 pub struct Token {
     pub kind: TokenKind,
     pub value: String,
+    pub line: u16,
 }
 impl Token {
     pub fn debug(&self) {
