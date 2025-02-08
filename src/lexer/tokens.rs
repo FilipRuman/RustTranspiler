@@ -77,7 +77,7 @@ pub struct Token {
     pub line: u16,
 }
 impl Token {
-    pub fn debug(&self) {
-        println!("{:?} {}", self.kind, self.value);
+    pub fn debug(&self, index: u32) {
+        println!("{}.    {:?} {}", index, self.kind, self.value);
     }
 }

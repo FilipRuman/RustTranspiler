@@ -32,8 +32,10 @@ fn main() {
         ],
     );
     let test: lookup::BindingPower;
+    let mut i: u32 = 0;
     for token in &tokens {
-        token.debug();
+        token.debug(i);
+        i += 1;
     }
 
     println!("ast:  ------------ \n");

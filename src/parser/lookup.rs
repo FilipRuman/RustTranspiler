@@ -49,8 +49,7 @@ impl Lookups {
         self.binding_power_lu.insert(kind, bp);
         self.left_denoted_lu.insert(kind, led_fn);
     }
-    fn nud(&mut self, kind: TokenKind, bp: BindingPower, nud_fn: fn(&mut Parser) -> Expression) {
-        self.binding_power_lu.insert(kind, bp);
+    fn nud(&mut self, kind: TokenKind, nud_fn: fn(&mut Parser) -> Expression) {
         self.nud_lu.insert(kind, nud_fn);
     }
     fn stmt(&mut self, kind: TokenKind, stmt_fn: fn(&mut Parser) -> Statement) {
@@ -65,6 +64,25 @@ impl Lookups {
         }
     }
     fn create_token_lookups(&mut self) {
+        self.led(
+            TokenKind::Assignment,
+            BindingPower::Assignment,
+            exprHandler::parse_assignment,
+        );
+        self.led(
+            TokenKind::PlusEquals,
+            BindingPower::Assignment,
+            exprHandler::parse_assignment,
+        );
+
+        self.led(
+            TokenKind::MinusEquals,
+            BindingPower::Assignment,
+            exprHandler::parse_assignment,
+        );
+        // TODo /= *=
+
+        //
         self.led(
             TokenKind::And,
             BindingPower::Logical,
@@ -149,21 +167,12 @@ impl Lookups {
             exprHandler::parse_binary_expression,
         );
 
-        self.nud(
-            TokenKind::Number,
-            BindingPower::Primary,
-            exprHandler::handle_number,
-        );
-        self.nud(
-            TokenKind::String,
-            BindingPower::Primary,
-            exprHandler::handle_string,
-        );
-        self.nud(
-            TokenKind::Identifier,
-            BindingPower::Primary,
-            exprHandler::handle_identifier,
-        );
+        self.nud(TokenKind::Number, exprHandler::handle_number);
+        self.nud(TokenKind::String, exprHandler::handle_string);
+        self.nud(TokenKind::Identifier, exprHandler::handle_identifier);
+        self.nud(TokenKind::Minus, exprHandler::parse_prefix);
+
+        self.nud(TokenKind::OpenParen, exprHandler::parse_grouping_expr);
 
         self.stmt(
             TokenKind::I32,

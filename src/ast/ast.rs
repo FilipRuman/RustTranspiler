@@ -13,6 +13,8 @@ pub enum Expression {
     String(String),
     Symbol(String),
     Binary(Box<Expression>, Token, Box<Expression>),
+    Prefix(Token, Box<Expression>),
+    Assignment(Box<Expression>, Token, Box<Expression>),
 }
 impl Expression {}
 #[derive(Debug)]

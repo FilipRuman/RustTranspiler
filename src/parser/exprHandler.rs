@@ -33,7 +33,11 @@ pub fn parse_expr(parser: &mut Parser, bp: BindingPower) -> Expression {
     let mut token = parser.current_token();
     let option = parser.lookups.nud_lu.get(&token.kind);
     if option == None {
-        panic!("Nud handler expected for token kind: {:?}", { token.kind });
+        panic!(
+            "Nud handler expected for token kind: {:?} token index: {}",
+            { token.kind },
+            parser.pos
+        );
     }
     let nud = option.unwrap();
     let mut left = nud(parser);
@@ -46,7 +50,33 @@ pub fn parse_expr(parser: &mut Parser, bp: BindingPower) -> Expression {
         if ledOption == None {
             panic!("Led handler expected for token kind: {:?}", { token.kind });
         }
-        left = ledOption.unwrap()(parser, left, bp);
+        left = ledOption.unwrap()(
+            parser,
+            left,
+            parser.lookups.binding_power_lu[&parser.current_token().kind],
+        );
     }
     return left;
+}
+
+pub fn parse_assignment(parser: &mut Parser, left: Expression, bp: BindingPower) -> Expression {
+    let operator = parser.advance().clone();
+    let rhs = parse_expr(parser, bp);
+
+    return Expression::Assignment(Box::new(left), operator, Box::new(rhs));
+}
+
+pub fn parse_prefix(parser: &mut Parser) -> Expression {
+    let operator_token = parser.advance().clone();
+    let rhs = parse_expr(parser, BindingPower::Default);
+
+    return Expression::Prefix(operator_token, Box::new(rhs));
+}
+
+pub fn parse_grouping_expr(parser: &mut Parser) -> Expression {
+    parser.advance();
+
+    let expression = parse_expr(parser, BindingPower::Default);
+    parser.expect(crate::tokens::TokenKind::CloseParen);
+    return expression;
 }
