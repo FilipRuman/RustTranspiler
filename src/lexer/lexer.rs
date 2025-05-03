@@ -171,7 +171,7 @@ pub fn tokenize(source: String, blackList: Vec<TokenKind>) -> Vec<Token> {
         }
     }
     lexer.push(Token {
-        kind: TokenKind::Eof,
+        kind: TokenKind::EndOfFile,
         value: "Eof".to_string(),
         line: lexer.current_line,
     });
@@ -296,9 +296,12 @@ fn handle_standard_pattern_tokenization(
 pub fn reserved_symbols() -> HashMap<String, TokenKind> {
     return HashMap::from([
         ("i32".to_string(), TokenKind::I32),
-        ("i64".to_string(), TokenKind::I64),
-        ("f32".to_string(), TokenKind::F32),
-        ("f64".to_string(), TokenKind::F64),
+        ("i16".to_string(), TokenKind::I16),
+        ("u32".to_string(), TokenKind::U32),
+        ("u16".to_string(), TokenKind::U16),
+        ("bool".to_string(), TokenKind::Bool),
+        ("float".to_string(), TokenKind::Float),
+        ("double".to_string(), TokenKind::Double),
         ("mut".to_string(), TokenKind::Mut),
         ("str".to_string(), TokenKind::Str),
         ("var".to_string(), TokenKind::Var),

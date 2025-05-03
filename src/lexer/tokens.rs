@@ -39,7 +39,7 @@ pub enum TokenKind {
     Slash,
     Percent,
 
-    Eof,
+    EndOfFile,
     Number,
     NextLine,
     Comment,
@@ -63,10 +63,14 @@ pub enum TokenKind {
     While,
 
     I32,
-    I64,
-    F32,
-    F64,
+    I16,
+    U32,
+    U16,
+    Bool,
+    Float,
+    Double,
     Str,
+
     Mut,
 }
 #[derive(Debug, Clone)]

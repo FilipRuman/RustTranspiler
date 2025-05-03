@@ -2,24 +2,27 @@ use std::fs;
 
 use tokens::TokenKind;
 
-#[path = "ast/ast.rs"]
-mod ast;
-#[path = "parser/exprHandler.rs"]
-mod exprHandler;
-#[path = "parser/stmtHandler.rs"]
-mod stmtHandler;
-
 #[path = "lexer/lexer.rs"]
 mod lexer;
-#[path = "parser/lookup.rs"]
-mod lookup;
+
 #[path = "parser/parser.rs"]
 mod parser;
+
+#[path = "codeGen/code_gen.rs"]
+mod code_gen;
+#[path = "parser/expression.rs"]
+mod expression;
+#[path = "parser/lookup.rs"]
+mod lookup;
+// #[path = "parser/statement.rs"]
+// mod statement;
 #[path = "lexer/tokens.rs"]
 mod tokens;
-const inputFilePath: &str = "./CompileTargets/simple.lang";
+const INPUT_FILE_PATH: &str = "./CompileTargets/simple.lang";
+const OUTPUT_FILE_PATH: &str = "./CompileTargets/Output.c";
+
 fn main() {
-    let content = fs::read_to_string(inputFilePath).expect("Couldn't find Input file!");
+    let content = fs::read_to_string(INPUT_FILE_PATH).expect("Couldn't find input file!");
     println!("content:{:?} ------------ \n", content);
 
     println!("tokens:  ------------ \n");
@@ -31,7 +34,6 @@ fn main() {
             TokenKind::NextLine,
         ],
     );
-    let test: lookup::BindingPower;
     let mut i: u32 = 0;
     for token in &tokens {
         token.debug(i);
@@ -40,6 +42,13 @@ fn main() {
 
     println!("ast:  ------------ \n");
 
-    let ast = parser::parse(tokens);
-    println!("{:?}", ast);
+    let expressions = parser::parse(tokens);
+    println!("{:?}", expressions);
+
+    println!("Output:  ------------ \n");
+
+    let output_code = code_gen::convert_expressions_to_code(expressions);
+    fs::write(OUTPUT_FILE_PATH, &output_code).expect("Couldn't find output file!");
+
+    println!("{}", output_code);
 }

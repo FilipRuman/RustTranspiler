@@ -1,65 +1,66 @@
 use crate::{
-    ast::Statement,
-    lexer, lookup, stmtHandler,
+    expression::{self, parse_expr, Expression},
+    lookup::Lookup,
     tokens::{Token, TokenKind},
 };
-struct Error {}
+
 pub struct Parser {
-    pub lookups: lookup::Lookups,
+    pub index: usize,
     pub tokens: Vec<Token>,
-    pub pos: u16,
-    pub errors: Vec<Error>,
+    pub lookup: Lookup,
 }
+
+const TAKEN_ARRAY_LENGTH_CHECK_SAFETY_CHECK: bool = false;
 impl Parser {
-    pub fn current_token(&self) -> &Token {
-        return &self.tokens[self.pos as usize];
+    pub fn new(tokens: Vec<Token>) -> Parser {
+        Parser {
+            index: 0,
+            tokens,
+            lookup: Lookup::new(),
+        }
     }
-    pub fn advance(&mut self) -> &Token {
-        let token = &self.tokens[self.pos as usize];
-        self.pos += 1;
-        return token;
-    }
-    pub fn next(&self) -> &Token {
-        let token = &self.tokens[(self.pos + 1) as usize];
-        return token;
-    }
-    /// is at the end of file
-    pub fn eof(&self) -> bool {
-        return self.pos as usize >= self.tokens.len()
-            || self.current_token().kind == TokenKind::Eof;
-    }
-
-    pub fn expectError(&mut self, expectedKind: TokenKind, error: Option<&str>) -> &Token {
-        let token = self.current_token();
-
-        if token.kind != expectedKind {
-            match error {
-                Some(text) => panic!("{}", text),
-                None => println!("expected {:?} but received {:?}", expectedKind, token.kind),
-            }
+    pub fn get_token(&self, index: usize) -> &Token {
+        if TAKEN_ARRAY_LENGTH_CHECK_SAFETY_CHECK && index >= self.tokens.len() {
+            panic!(
+                "index:{} was greater than tokens array length:{} !",
+                index,
+                self.tokens.len()
+            );
         }
 
-        return self.advance();
+        &self.tokens[index]
+    }
+    pub fn advance(&mut self) -> &Token {
+        self.index += 1;
+        &self.get_token(self.index - 1)
+    }
+    pub fn current_token(&self) -> &Token {
+        &self.get_token(self.index)
+    }
+    pub fn current_token_kind(&self) -> &TokenKind {
+        &self.get_token(self.index).kind
+    }
+    pub fn current_bp(&self) -> &i8 {
+        self.lookup.get_bp(self.get_token(self.index).kind)
     }
 
-    pub fn expect(&mut self, expectedKind: TokenKind) -> &Token {
-        return self.expectError(expectedKind, None);
+    pub fn expect(&self, expected: &TokenKind) -> &Token {
+        let current = self.current_token();
+        if &current.kind == expected {
+            return current;
+        }
+
+        panic!("Expected: {:?} but found: {:?} ", expected, current);
     }
 }
-/// returns: Statement::Block
-pub fn parse(tokens: Vec<Token>) -> Statement {
-    let mut statements: Vec<Statement> = Vec::new(); //statements
-    let lookups = lookup::Lookups::new();
-    let mut parser = Parser {
-        tokens,
-        pos: 0,
-        errors: Vec::new(),
-        lookups,
-    };
+pub fn parse(tokens: Vec<Token>) -> Vec<Expression> {
+    let mut parser = Parser::new(tokens);
 
-    while !parser.eof() {
-        statements.push(stmtHandler::parse_statement(&mut parser));
+    let mut parsed_lines: Vec<Expression> = Vec::new();
+    while parser.current_token_kind() != &TokenKind::EndOfFile {
+        println!("\n parse new line :: \n");
+        parsed_lines.push(parse_expr(&mut parser, &0));
     }
 
-    return Statement::Block(statements);
+    parsed_lines
 }
