@@ -3,6 +3,8 @@ use std::{default, process::Output};
 use crate::{
     expression::{self, Expression},
     tokens::{Token, TokenKind},
+    type_lookup,
+    types::Type,
 };
 
 pub fn convert_expressions_to_code(expressions: Vec<Expression>) -> String {
@@ -34,7 +36,7 @@ fn handle_prefix(prefix: Token, target: Expression) -> String {
     return format!("{}{}", prefix.value, handle_expr(target));
 }
 fn handle_grouping(expression_inside: Expression) -> String {
-    return format!("({})", handle_expr(expression_inside));
+    return format!("{}", handle_expr(expression_inside));
 }
 fn handle_keyword(token_kind: TokenKind) -> String {
     match token_kind {
@@ -57,24 +59,43 @@ fn handle_keyword(token_kind: TokenKind) -> String {
     }
 }
 pub fn handle_variable_declaration(
-    variable_type: TokenKind,
+    variable_type: Type,
     variable_name: String,
     mutable: bool,
 ) -> String {
-    let variable_str = match variable_type {
-        TokenKind::Str => "char[]",
-        TokenKind::I32 => "long",
-        TokenKind::I16 => "int",
-        TokenKind::U32 => "unsigned long",
-        TokenKind::U16 => "unsigned int",
-        TokenKind::Bool => "bool",
-
-        default => panic!("variable type: {:?} doesn't have a handler", default),
-    };
+    let type_str = handle_type(variable_type);
+    // match variable_type {
+    //     TokenKind::Str => "char[]",
+    //     TokenKind::I32 => "long",
+    //     TokenKind::I16 => "int",
+    //     TokenKind::U32 => "unsigned long",
+    //     TokenKind::U16 => "unsigned int",
+    //     TokenKind::Bool => "bool",
+    //
+    //     default => panic!("variable type: {:?} doesn't have a handler", default),
+    // };
 
     let mut_str = if mutable { "" } else { "const " };
 
-    return format!("{}{} {}", mut_str, variable_str, variable_name);
+    return format!("{}{} {}", mut_str, type_str, variable_name);
+}
+fn handle_type(var_type: Type) -> String {
+    match var_type {
+        Type::Symbol(symbol) => handle_symbol_type(symbol),
+        Type::Array(type_inside) => format!("{}[]", handle_type(*type_inside)),
+    }
+}
+fn handle_symbol_type(symbol: String) -> String {
+    match symbol.as_str() {
+        "str" => "char[]",
+        "i32" => "long",
+        "i16" => "int",
+        "u32" => "unsigned long",
+        "u16" => "unsigned int",
+
+        default => default,
+    }
+    .to_string()
 }
 
 fn handle_assignment(target: Expression, operator: Token, value: Expression) -> String {

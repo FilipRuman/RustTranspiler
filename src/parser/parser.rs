@@ -2,12 +2,14 @@ use crate::{
     expression::{self, parse_expr, Expression},
     lookup::Lookup,
     tokens::{Token, TokenKind},
+    type_lookup::TypeLookup,
 };
 
 pub struct Parser {
     pub index: usize,
     pub tokens: Vec<Token>,
     pub lookup: Lookup,
+    pub type_lookup: TypeLookup,
 }
 
 const TAKEN_ARRAY_LENGTH_CHECK_SAFETY_CHECK: bool = false;
@@ -17,6 +19,7 @@ impl Parser {
             index: 0,
             tokens,
             lookup: Lookup::new(),
+            type_lookup: TypeLookup::new(),
         }
     }
     pub fn get_token(&self, index: usize) -> &Token {
@@ -41,11 +44,11 @@ impl Parser {
         &self.get_token(self.index).kind
     }
     pub fn current_bp(&self) -> &i8 {
-        self.lookup.get_bp(self.get_token(self.index).kind)
+        self.lookup.get_bp(self.current_token_kind())
     }
 
-    pub fn expect(&self, expected: &TokenKind) -> &Token {
-        let current = self.current_token();
+    pub fn expect(&mut self, expected: &TokenKind) -> &Token {
+        let current = self.advance();
         if &current.kind == expected {
             return current;
         }

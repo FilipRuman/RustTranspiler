@@ -46,7 +46,6 @@ pub enum TokenKind {
     String,
     Identifier,
 
-    Var,
     Const,
     Fn,
     Enum,
@@ -62,14 +61,7 @@ pub enum TokenKind {
     Else,
     While,
 
-    I32,
-    I16,
-    U32,
-    U16,
-    Bool,
-    Float,
-    Double,
-    Str,
+    Let,
 
     Mut,
 }

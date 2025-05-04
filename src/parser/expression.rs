@@ -3,6 +3,7 @@ use std::env::{consts, VarError};
 use crate::{
     parser::{self, Parser},
     tokens::{Token, TokenKind},
+    types::{parse_type, Type},
 };
 
 #[derive(Debug, Clone)]
@@ -15,7 +16,7 @@ pub enum Expression {
     // target operator value
     Assignment(Box<Expression>, Token, Box<Expression>),
     // type name mutable
-    VariableDeclaration(TokenKind, String, bool),
+    VariableDeclaration(Type, String, bool),
     //TODO:
     Grouping(Box<Expression>),
 
@@ -23,16 +24,23 @@ pub enum Expression {
 }
 
 pub fn parse_expr(parser: &mut Parser, bp: &i8) -> Expression {
+    debug_expression("      expr:");
     let nod = parser.current_token();
-
-    debug_expression(&format!("parse_expr: nod:{:?} bp:{}", nod, bp));
+    let mut to_debug = format!("parse_expr: nod:{:?} bp:{} ", nod, bp,);
     let mut left = parser.lookup.get_nod(nod.kind)(parser);
+
+    to_debug += &format!(
+        "current_token_kind:{:?} current_bp:{}",
+        parser.current_token_kind(),
+        parser.lookup.get_bp(&TokenKind::Plus)
+    );
+    debug_expression(&to_debug);
 
     while parser.current_bp() > bp {
         let led = parser.current_token().kind.clone();
         let led_fn = parser.lookup.get_led(led);
 
-        debug_expression(&format!("expr led call ->>:",));
+        debug_expression(&format!("expr led call: led:{:?} ->>:", led));
 
         left = led_fn(parser, &parser.current_bp().to_owned(), left);
 
@@ -46,16 +54,25 @@ pub fn parse_expr(parser: &mut Parser, bp: &i8) -> Expression {
     return left;
 }
 pub fn parse_variable_declaration(parser: &mut Parser) -> Expression {
-    let variable_type = parser.advance().kind;
+    // let mut i32 name = 1+2;
 
+    // move past let
+    parser.advance();
     let mutable = parser.current_token_kind() == &TokenKind::Mut;
     if mutable {
         parser.advance();
     }
+    let variable_type = parse_type(parser, &0);
 
     let name = (&parser.expect(&TokenKind::Identifier).value).to_owned();
 
-    parser.advance();
+    debug_expression(&format!(
+        "variable_declaration_expression: type{:?} mut:{} name:{} next_token_kind:{:?}",
+        variable_type,
+        mutable,
+        name,
+        parser.current_token_kind(),
+    ));
     return Expression::VariableDeclaration(variable_type, name, mutable);
 }
 pub fn parse_assignment(parser: &mut Parser, _: &i8, target: Expression) -> Expression {
@@ -74,6 +91,12 @@ pub fn parse_assignment(parser: &mut Parser, _: &i8, target: Expression) -> Expr
 pub fn parse_binary_expr(parser: &mut Parser, bp: &i8, left: Expression) -> Expression {
     let operator_original = parser.advance();
     let operator = operator_original.clone();
+    debug_expression(&format!(
+        "parsed binary: bp:{} operator{:?} right_token_kind{:?}",
+        bp,
+        operator,
+        parser.current_token_kind()
+    ));
 
     let right = parse_expr(parser, &bp);
 

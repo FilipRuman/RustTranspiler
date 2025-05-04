@@ -5,7 +5,7 @@ use std::{cmp, collections::HashMap};
 struct Pattern {
     kind: TokenKind,
     value: Vec<String>,
-    valueString: String,
+    value_string: String,
 }
 impl Pattern {
     fn new(kind: TokenKind, value: &str) -> Pattern {
@@ -18,15 +18,15 @@ impl Pattern {
         }
         return Pattern {
             value: source,
-            valueString: value.to_string(),
+            value_string: value.to_string(),
             kind,
         };
     }
-    pub fn onMatchNonNumber(&self, lex: &mut Lexer) {
+    pub fn on_match_non_number(&self, lex: &mut Lexer) {
         lex.advance(self.value.len() as u16);
         lex.push(Token {
             kind: self.kind.clone(),
-            value: self.valueString.clone(),
+            value: self.value_string.clone(),
             line: lex.current_line,
         });
     }
@@ -37,10 +37,10 @@ pub struct Lexer {
     pub source: Vec<String>,
     pos: u16,
     current_line: u16,
-    blackList: Vec<TokenKind>,
+    black_list: Vec<TokenKind>,
 }
 impl Lexer {
-    pub fn new(source: String, blackList: Vec<TokenKind>) -> Lexer {
+    pub fn new(source: String, black_list: Vec<TokenKind>) -> Lexer {
         // I create those regexes by hand in code so I don't have to worry about errors in creating regexes
         let split = source.split("").map(|s| s.to_string());
         let mut source: Vec<String> = Vec::new();
@@ -53,11 +53,11 @@ impl Lexer {
             tokens: Vec::new(),
             source,
             pos: 0,
-            blackList,
+            black_list,
             current_line: 0,
         }
     }
-    fn getPatterns() -> Vec<Pattern> {
+    fn get_patterns() -> Vec<Pattern> {
         return vec![
             Pattern::new(TokenKind::NextLine, "\n"),
             Pattern::new(TokenKind::WhiteSpace, " "),
@@ -107,7 +107,7 @@ impl Lexer {
     }
 
     pub fn push(&mut self, token: Token) {
-        if !self.blackList.contains(&token.kind) {
+        if !self.black_list.contains(&token.kind) {
             self.tokens.push(token);
         }
     }
@@ -119,11 +119,11 @@ impl Lexer {
         return self.pos as usize >= self.source.len();
     }
     /// returns string containing characters from pos to pos + n
-    fn nextNCharacters(&self, n: u16) -> String {
+    fn next_ncharacters(&self, n: u16) -> String {
         let mut value = String::new();
 
-        let endIndex = cmp::min(self.pos + n, self.source.len() as u16 - 1);
-        for i in self.pos..endIndex {
+        let end_index = cmp::min(self.pos + n, self.source.len() as u16 - 1);
+        for i in self.pos..end_index {
             value += &self.source[i as usize];
         }
         return value;
@@ -134,9 +134,9 @@ impl Lexer {
     }
 }
 
-pub fn tokenize(source: String, blackList: Vec<TokenKind>) -> Vec<Token> {
-    let mut lexer = Lexer::new(source, blackList);
-    let patterns = Lexer::getPatterns();
+pub fn tokenize(source: String, black_list: Vec<TokenKind>) -> Vec<Token> {
+    let mut lexer = Lexer::new(source, black_list);
+    let patterns = Lexer::get_patterns();
     let reserved_symbols = reserved_symbols();
 
     while !lexer.eof() {
@@ -144,11 +144,11 @@ pub fn tokenize(source: String, blackList: Vec<TokenKind>) -> Vec<Token> {
         // Check if is number
         let at = &lexer.at();
 
-        if isNumber(at) {
+        if is_number(at) {
             handle_number_tokenization(&mut lexer);
             continue;
         }
-        if lexer.nextNCharacters(2) == "//" {
+        if lexer.next_ncharacters(2) == "//" {
             handle_comments(&mut lexer);
             continue;
         }
@@ -156,7 +156,7 @@ pub fn tokenize(source: String, blackList: Vec<TokenKind>) -> Vec<Token> {
             handle_strings(&mut lexer);
             continue;
         }
-        if isSymbol(at, true) {
+        if is_symbol(at, true) {
             handle_symbols(&mut lexer, &reserved_symbols);
             continue;
         }
@@ -181,10 +181,10 @@ pub fn tokenize(source: String, blackList: Vec<TokenKind>) -> Vec<Token> {
 fn handle_comments(lexer: &mut Lexer) {
     // println!("handle_comments");
     let mut value = String::new();
-    let mut currentIndex = lexer.pos as usize;
-    while currentIndex < lexer.source.len() {
-        let char = &lexer.source[currentIndex];
-        currentIndex += 1;
+    let mut current_index = lexer.pos as usize;
+    while current_index < lexer.source.len() {
+        let char = &lexer.source[current_index];
+        current_index += 1;
         if char == "\n" {
             break;
         }
@@ -208,10 +208,10 @@ fn handle_comments(lexer: &mut Lexer) {
 fn handle_strings(lexer: &mut Lexer) {
     // println!("handle_strings");
     let mut value = "\"".to_string();
-    let mut currentIndex = (lexer.pos + 1) as usize;
-    while currentIndex < lexer.source.len() {
-        let char = &lexer.source[currentIndex];
-        currentIndex += 1;
+    let mut current_index = (lexer.pos + 1) as usize;
+    while current_index < lexer.source.len() {
+        let char = &lexer.source[current_index];
+        current_index += 1;
         value += &char.to_string();
 
         if char == "\"" {
@@ -228,15 +228,15 @@ fn handle_strings(lexer: &mut Lexer) {
 }
 fn handle_symbols(lexer: &mut Lexer, reserved_symbols: &HashMap<String, TokenKind>) {
     let mut value = String::new();
-    let mut currentIndex = (lexer.pos + 1) as usize;
+    let mut current_index = (lexer.pos + 1) as usize;
     value += &lexer.at();
-    while currentIndex < lexer.source.len() {
-        let char = &lexer.source[currentIndex];
+    while current_index < lexer.source.len() {
+        let char = &lexer.source[current_index];
         // println!("handle_symbols {:?} {}", char, isSymbol(char, false));
 
-        currentIndex += 1;
+        current_index += 1;
 
-        if !isSymbol(char, false) {
+        if !is_symbol(char, false) {
             break;
         }
         value += &char.to_string();
@@ -285,7 +285,7 @@ fn handle_standard_pattern_tokenization(
         if equal {
             // println!("Match {:?}", pattern.valueString);
 
-            pattern.onMatchNonNumber(lexer);
+            pattern.on_match_non_number(lexer);
 
             *matched = true;
             break;
@@ -295,16 +295,8 @@ fn handle_standard_pattern_tokenization(
 
 pub fn reserved_symbols() -> HashMap<String, TokenKind> {
     return HashMap::from([
-        ("i32".to_string(), TokenKind::I32),
-        ("i16".to_string(), TokenKind::I16),
-        ("u32".to_string(), TokenKind::U32),
-        ("u16".to_string(), TokenKind::U16),
-        ("bool".to_string(), TokenKind::Bool),
-        ("float".to_string(), TokenKind::Float),
-        ("double".to_string(), TokenKind::Double),
         ("mut".to_string(), TokenKind::Mut),
-        ("str".to_string(), TokenKind::Str),
-        ("var".to_string(), TokenKind::Var),
+        ("let".to_string(), TokenKind::Let),
         ("const".to_string(), TokenKind::Const),
         ("enum".to_string(), TokenKind::Enum),
         ("class".to_string(), TokenKind::Class),
@@ -328,18 +320,18 @@ const SYMBOLS: [&str; 53] = [
     "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z", "_",
 ];
 
-fn isSymbol(char: &String, beginning: bool) -> bool {
+fn is_symbol(char: &String, beginning: bool) -> bool {
     return SYMBOLS.contains(&(char.as_str()))
         || (!beginning && NUMBERS.contains(&(char.as_str())));
 }
 
 fn handle_number_tokenization(lexer: &mut Lexer) {
     let mut value = String::new();
-    let mut currentIndex = lexer.pos as usize;
+    let mut current_index = lexer.pos as usize;
     loop {
-        let char = &lexer.source[currentIndex];
-        currentIndex += 1;
-        if !isNumber(char) {
+        let char = &lexer.source[current_index];
+        current_index += 1;
+        if !is_number(char) {
             break;
         }
         value += &char.to_string();
@@ -353,7 +345,7 @@ fn handle_number_tokenization(lexer: &mut Lexer) {
     });
 }
 const NUMBERS: [&str; 10] = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"];
-fn isNumber(char: &String) -> bool {
-    let charStr = char.as_str();
-    return NUMBERS.contains(&(charStr)) || charStr == ".";
+fn is_number(char: &String) -> bool {
+    let char_str = char.as_str();
+    return NUMBERS.contains(&(char_str)) || char_str == ".";
 }

@@ -14,6 +14,10 @@ mod code_gen;
 mod expression;
 #[path = "parser/lookup.rs"]
 mod lookup;
+#[path = "parser/type_lookup.rs"]
+mod type_lookup;
+#[path = "parser/types.rs"]
+mod types;
 // #[path = "parser/statement.rs"]
 // mod statement;
 #[path = "lexer/tokens.rs"]

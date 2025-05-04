@@ -31,8 +31,8 @@ impl Lookup {
             token_kind
         ))
     }
-    pub fn get_bp(&self, token_kind: TokenKind) -> &i8 {
-        self.binding_power_lu.get(&token_kind).expect(&format!(
+    pub fn get_bp(&self, token_kind: &TokenKind) -> &i8 {
+        self.binding_power_lu.get(token_kind).expect(&format!(
             "bp was not found for token kind: {:?}",
             token_kind
         ))
@@ -49,7 +49,9 @@ impl Lookup {
 
     fn nod(&mut self, token_kind: TokenKind, bp: i8, function: fn(&mut Parser) -> Expression) {
         self.nod_lu.insert(token_kind, function);
-        self.binding_power_lu.insert(token_kind, bp);
+        if bp >= -1 {
+            self.binding_power_lu.insert(token_kind, bp);
+        }
     }
 
     pub fn new() -> Lookup {
@@ -77,22 +79,18 @@ impl Lookup {
         lookup.led(TokenKind::GreaterEquals, 1, parse_binary_expr);
         lookup.led(TokenKind::Equals, 1, parse_binary_expr);
 
-        lookup.nod(TokenKind::OpenParen, 4, parse_grouping);
+        lookup.nod(TokenKind::OpenParen, 0, parse_grouping);
         lookup.nod(TokenKind::CloseParen, 0, parse_grouping);
 
-        lookup.nod(TokenKind::Str, 0, parse_variable_declaration);
-        lookup.nod(TokenKind::I16, 0, parse_variable_declaration);
-        lookup.nod(TokenKind::I32, 0, parse_variable_declaration);
-        lookup.nod(TokenKind::U16, 0, parse_variable_declaration);
-        lookup.nod(TokenKind::U32, 0, parse_variable_declaration);
-        lookup.nod(TokenKind::Bool, 0, parse_variable_declaration);
+        lookup.nod(TokenKind::Let, 0, parse_variable_declaration);
 
         lookup.nod(TokenKind::String, 0, parse_string_nod);
         lookup.nod(TokenKind::Identifier, 0, parse_identifier_nod);
         lookup.nod(TokenKind::Number, 0, parse_number_nod);
 
-        lookup.nod(TokenKind::Minus, 0, parse_prefix_nod);
-        lookup.nod(TokenKind::Plus, 0, parse_prefix_nod);
+        // -99 so I don't add new bp in lookup and override old one
+        lookup.nod(TokenKind::Minus, -99, parse_prefix_nod);
+        lookup.nod(TokenKind::Plus, -99, parse_prefix_nod);
 
         lookup.nod(TokenKind::SemiColon, -1, parse_keyword_nod);
         lookup.binding_power_lu.insert(TokenKind::EndOfFile, -1);
