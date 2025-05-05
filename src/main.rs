@@ -22,8 +22,8 @@ mod types;
 // mod statement;
 #[path = "lexer/tokens.rs"]
 mod tokens;
-const INPUT_FILE_PATH: &str = "./CompileTargets/simple.lang";
-const OUTPUT_FILE_PATH: &str = "./CompileTargets/Output.c";
+const INPUT_FILE_PATH: &str = "./CompileTargets/simple.rs";
+const OUTPUT_FILE_PATH: &str = "./CompileTargets/Output.cs";
 
 fn main() {
     let content = fs::read_to_string(INPUT_FILE_PATH).expect("Couldn't find input file!");

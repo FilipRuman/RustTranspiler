@@ -50,9 +50,8 @@ impl TypeLookup {
             nod_lu: HashMap::new(),
         };
 
-        // lookup.led(TokenKind::, 1, parse_assignment);
+        lookup.led(TokenKind::OpenBracket, 5, parse_array_type);
         lookup.nod(TokenKind::Identifier, 0, parse_symbol_type);
-        lookup.nod(TokenKind::OpenBracket, 0, parse_array_type);
 
         lookup
     }

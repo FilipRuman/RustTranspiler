@@ -1,9 +1,10 @@
 use std::env::{consts, VarError};
 
 use crate::{
+    lexer,
     parser::{self, Parser},
     tokens::{Token, TokenKind},
-    types::{parse_type, Type},
+    types::{parse_symbol_type, parse_type, Type},
 };
 
 #[derive(Debug, Clone)]
@@ -11,16 +12,51 @@ pub enum Expression {
     Number(f32),
     String(String),
     Identifier(String),
-    Prefix(Token, Box<Expression>),
+    Prefix {
+        prefix: Token,
+        value: Box<Expression>,
+    },
     Keyword(TokenKind),
     // target operator value
-    Assignment(Box<Expression>, Token, Box<Expression>),
+    Assignment {
+        target: Box<Expression>,
+        operator: Token,
+        value: Box<Expression>,
+    },
     // type name mutable
-    VariableDeclaration(Type, String, bool),
+    VariableDeclaration {
+        var_type: Type,
+        name: String,
+        mutable: bool,
+    },
     //TODO:
     Grouping(Box<Expression>),
+    Class {
+        public: bool,
+        name: String,
+        properties: Vec<Expression>,
+        functions: Vec<Expression>,
+    },
+    ClassProperty {
+        var_name: String,
+        var_type: Type,
+    },
+    ClassFunction {
+        name: String, /* ,type : Type */
+    },
 
-    Binary(Box<Expression>, Token, Box<Expression>),
+    Binary {
+        l: Box<Expression>,
+        operator: Token,
+        r: Box<Expression>,
+    },
+    ClassInstantiation {
+        name: String,
+        properties: Vec<Expression>,
+    },
+    ArrayInitialization {
+        properties: Vec<Expression>,
+    },
 }
 
 pub fn parse_expr(parser: &mut Parser, bp: &i8) -> Expression {
@@ -53,6 +89,86 @@ pub fn parse_expr(parser: &mut Parser, bp: &i8) -> Expression {
     }
     return left;
 }
+pub fn parse_class(parser: &mut Parser) -> Expression {
+    // class pub NAME {
+    // i32 name ;
+    // bool[] orher_name;
+    // }
+    parser.expect(&TokenKind::Class);
+    let public = parser.current_token_kind() == &TokenKind::Pub;
+    if public {
+        parser.expect(&TokenKind::Pub);
+    }
+    let name = parser.expect(&TokenKind::Identifier).value.to_owned();
+    debug_expression(&format!("parse class",));
+    parser.expect(&TokenKind::OpenCurly);
+
+    let mut properties = Vec::new();
+    let mut functions = Vec::new();
+    while parser.current_token_kind() != &TokenKind::EndOfFile
+        && parser.current_token_kind() != &TokenKind::CloseCurly
+    {
+        debug_expression(&format!(
+            "parse class property: {:?}",
+            parser.current_token_kind()
+        ));
+        // Property
+        if parser.current_token_kind() == &TokenKind::Identifier {
+            let property_type = parse_type(parser, &0);
+            let property_name = parser.expect(&TokenKind::Identifier).value.clone();
+            parser.expect(&TokenKind::SemiColon);
+            properties.push(Expression::ClassProperty {
+                var_name: property_name,
+                var_type: property_type,
+            });
+            continue;
+        }
+        // function
+    }
+    parser.expect(&TokenKind::CloseCurly);
+
+    Expression::Class {
+        public,
+        name,
+        functions,
+        properties,
+    }
+}
+pub fn parse_array_initialization(parser: &mut Parser) -> Expression {
+    parser.expect(&TokenKind::OpenCurly);
+    let mut properties = Vec::new();
+    while parser.current_token_kind() != &TokenKind::EndOfFile
+        && parser.current_token_kind() != &TokenKind::CloseCurly
+    {
+        properties.push(parse_expr(parser, &0));
+    }
+
+    parser.expect(&TokenKind::CloseCurly);
+
+    Expression::ArrayInitialization { properties }
+}
+pub fn parse_class_instantiation(parser: &mut Parser, bp: &i8, left: Expression) -> Expression {
+    let name = match left {
+        Expression::Identifier(text) => text,
+        _ => {
+            panic!("left is not a identifier in parse_class_instantiation ")
+        }
+    };
+
+    parser.expect(&TokenKind::OpenCurly);
+    let mut properties = Vec::new();
+    while parser.current_token_kind() != &TokenKind::EndOfFile
+        && parser.current_token_kind() != &TokenKind::CloseCurly
+    {
+        properties.push(parse_expr(parser, &0));
+    }
+
+    parser.expect(&TokenKind::CloseCurly);
+    Expression::ClassInstantiation {
+        name,
+        properties: properties,
+    }
+}
 pub fn parse_variable_declaration(parser: &mut Parser) -> Expression {
     // let mut i32 name = 1+2;
 
@@ -62,18 +178,22 @@ pub fn parse_variable_declaration(parser: &mut Parser) -> Expression {
     if mutable {
         parser.advance();
     }
-    let variable_type = parse_type(parser, &0);
+    let var_type = parse_type(parser, &0);
 
     let name = (&parser.expect(&TokenKind::Identifier).value).to_owned();
 
     debug_expression(&format!(
         "variable_declaration_expression: type{:?} mut:{} name:{} next_token_kind:{:?}",
-        variable_type,
+        var_type,
         mutable,
         name,
         parser.current_token_kind(),
     ));
-    return Expression::VariableDeclaration(variable_type, name, mutable);
+    return Expression::VariableDeclaration {
+        var_type,
+        name,
+        mutable,
+    };
 }
 pub fn parse_assignment(parser: &mut Parser, _: &i8, target: Expression) -> Expression {
     debug_expression(&format!(
@@ -85,7 +205,11 @@ pub fn parse_assignment(parser: &mut Parser, _: &i8, target: Expression) -> Expr
     let operator = parser.current_token().clone();
     parser.advance();
     let value = parse_expr(parser, &0);
-    return Expression::Assignment(Box::new(target), operator, Box::new(value));
+    return Expression::Assignment {
+        target: Box::new(target),
+        operator,
+        value: Box::new(value),
+    };
 }
 
 pub fn parse_binary_expr(parser: &mut Parser, bp: &i8, left: Expression) -> Expression {
@@ -100,7 +224,11 @@ pub fn parse_binary_expr(parser: &mut Parser, bp: &i8, left: Expression) -> Expr
 
     let right = parse_expr(parser, &bp);
 
-    Expression::Binary(Box::new(left), operator, Box::new(right))
+    Expression::Binary {
+        l: Box::new(left),
+        operator,
+        r: Box::new(right),
+    }
 }
 pub fn parse_grouping(parser: &mut Parser) -> Expression {
     parser.advance();
@@ -125,10 +253,10 @@ pub fn parse_prefix_nod(parser: &mut Parser) -> Expression {
         parser.current_token().value
     ));
 
-    let operator = parser.advance().to_owned();
-    let target = Box::new(parse_expr(parser, &0));
+    let prefix = parser.advance().to_owned();
+    let value = Box::new(parse_expr(parser, &0));
 
-    Expression::Prefix(operator, target)
+    Expression::Prefix { prefix, value }
 }
 
 pub fn parse_identifier_nod(parser: &mut Parser) -> Expression {

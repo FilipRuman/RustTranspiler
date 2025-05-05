@@ -300,7 +300,7 @@ pub fn reserved_symbols() -> HashMap<String, TokenKind> {
         ("const".to_string(), TokenKind::Const),
         ("enum".to_string(), TokenKind::Enum),
         ("class".to_string(), TokenKind::Class),
-        ("public".to_string(), TokenKind::Public),
+        ("pub".to_string(), TokenKind::Pub),
         ("mod".to_string(), TokenKind::Mod),
         ("new".to_string(), TokenKind::New),
         ("as".to_string(), TokenKind::As),

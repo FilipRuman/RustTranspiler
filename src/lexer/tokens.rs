@@ -7,6 +7,7 @@ pub enum TokenKind {
     CloseCurly,
     CloseParen,
     OpenParen,
+    Inst,
 
     DotDot,
     Dot,
@@ -50,7 +51,7 @@ pub enum TokenKind {
     Fn,
     Enum,
     Class,
-    Public,
+    Pub,
     Mod,
     As,
     New,

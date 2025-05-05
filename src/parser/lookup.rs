@@ -2,9 +2,10 @@ use std::collections::HashMap;
 
 use crate::{
     expression::{
-        self, parse_assignment, parse_binary_expr, parse_expr, parse_grouping,
-        parse_identifier_nod, parse_keyword_nod, parse_number_nod, parse_prefix_nod,
-        parse_string_nod, parse_variable_declaration, Expression,
+        self, parse_array_initialization, parse_assignment, parse_binary_expr, parse_class,
+        parse_class_instantiation, parse_expr, parse_grouping, parse_identifier_nod,
+        parse_keyword_nod, parse_number_nod, parse_prefix_nod, parse_string_nod,
+        parse_variable_declaration, Expression,
     },
     parser::{self, Parser},
     tokens::TokenKind,
@@ -79,10 +80,14 @@ impl Lookup {
         lookup.led(TokenKind::GreaterEquals, 1, parse_binary_expr);
         lookup.led(TokenKind::Equals, 1, parse_binary_expr);
 
+        lookup.led(TokenKind::OpenCurly, 5, parse_class_instantiation);
+        lookup.binding_power_lu.insert(TokenKind::CloseCurly, 0);
+
         lookup.nod(TokenKind::OpenParen, 0, parse_grouping);
         lookup.nod(TokenKind::CloseParen, 0, parse_grouping);
 
         lookup.nod(TokenKind::Let, 0, parse_variable_declaration);
+        lookup.nod(TokenKind::Class, 0, parse_class);
 
         lookup.nod(TokenKind::String, 0, parse_string_nod);
         lookup.nod(TokenKind::Identifier, 0, parse_identifier_nod);
@@ -92,8 +97,11 @@ impl Lookup {
         lookup.nod(TokenKind::Minus, -99, parse_prefix_nod);
         lookup.nod(TokenKind::Plus, -99, parse_prefix_nod);
 
+        lookup.nod(TokenKind::OpenCurly, 5, parse_array_initialization);
+
         lookup.nod(TokenKind::SemiColon, -1, parse_keyword_nod);
         lookup.binding_power_lu.insert(TokenKind::EndOfFile, -1);
+        lookup.binding_power_lu.insert(TokenKind::OpenBracket, 5);
 
         lookup
     }

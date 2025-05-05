@@ -13,14 +13,13 @@ pub fn parse_symbol_type(parser: &mut Parser) -> Type {
     return Type::Symbol(parser.expect(&TokenKind::Identifier).value.to_owned());
 }
 
-pub fn parse_array_type(parser: &mut Parser) -> Type {
+pub fn parse_array_type(parser: &mut Parser, bp: &i8, left: Type) -> Type {
     debug_type("parse_array_type");
     // move past [ && ]
-    parser.advance();
-    parser.advance();
+    parser.expect(&TokenKind::OpenBracket);
+    parser.expect(&TokenKind::CloseBracket);
 
-    let underlying_type = parse_type(parser, &0);
-    return Type::Array(Box::new(underlying_type));
+    return Type::Array(Box::new(left));
 }
 pub fn parse_type(parser: &mut Parser, bp: &i8) -> Type {
     debug_type(" type:");
