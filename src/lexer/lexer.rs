@@ -331,7 +331,7 @@ fn handle_number_tokenization(lexer: &mut Lexer) {
     loop {
         let char = &lexer.source[current_index];
         current_index += 1;
-        if !is_number(char) {
+        if !is_number(char) && char != "." {
             break;
         }
         value += &char.to_string();
@@ -347,5 +347,5 @@ fn handle_number_tokenization(lexer: &mut Lexer) {
 const NUMBERS: [&str; 10] = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"];
 fn is_number(char: &String) -> bool {
     let char_str = char.as_str();
-    return NUMBERS.contains(&(char_str)) || char_str == ".";
+    return NUMBERS.contains(&(char_str));
 }
