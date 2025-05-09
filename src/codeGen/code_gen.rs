@@ -48,18 +48,139 @@ fn handle_expr(expression: Expression) -> String {
             handle_class_instantiation(name, properties)
         }
         Expression::ArrayInitialization { properties } => handle_array_initialization(properties),
+        Expression::MemberExpr { member, name } => handle_member(*member, name),
+        Expression::Function {
+            name,
+            properties,
+            public,
+            output,
+            inside,
+        } => handle_function(name, properties, public, output, inside),
+        Expression::FunctionProperty { var_name, var_type } => {
+            handle_function_property(var_name, var_type)
+        }
+        Expression::Return { value } => handle_return(*value),
+        Expression::If { condition, inside } => handle_if(*condition, inside),
+        Expression::While { condition, inside } => handle_while(*condition, inside),
+        Expression::For {
+            iterator_name,
+            iteration_target,
+            inside,
+        } => handle_for(iterator_name, *iteration_target, inside),
+        Expression::Range { from, to } => panic!("encountered range in un expected position"),
     }
 }
+fn handle_for(
+    iterator_name: String,
+    iteration_target: Expression,
+    inside: Vec<Expression>,
+) -> String {
+    let loop_str = match iteration_target {
+        Expression::Range { from, to } => format!(
+            "for(int {} = {}; {} < {}; {}++;)",
+            iterator_name,
+            handle_expr(*from),
+            iterator_name,
+            handle_expr(*to),
+            iterator_name
+        ),
+
+        Expression::Identifier(target_name) => {
+            format!("foreach(var {} in {})", iterator_name, target_name)
+        }
+
+        default => {
+            panic!("expected iteration target, found {:?}", default);
+        }
+    };
+
+    let mut inside_str = String::new();
+    for expr in inside {
+        inside_str += &handle_expr(expr);
+    }
+
+    return format!("{} {{\n{}}}\n", loop_str, inside_str);
+}
+
+fn handle_if(condition: Expression, inside: Vec<Expression>) -> String {
+    let condition_str = handle_expr(condition);
+
+    let mut inside_str = String::new();
+    for expr in inside {
+        inside_str += &handle_expr(expr);
+    }
+
+    return format!("if({}){{\n{}}}\n", condition_str, inside_str);
+}
+fn handle_while(condition: Expression, inside: Vec<Expression>) -> String {
+    let condition_str = handle_expr(condition);
+
+    let mut inside_str = String::new();
+    for expr in inside {
+        inside_str += &handle_expr(expr);
+    }
+
+    return format!("while({}){{\n{}}}\n", condition_str, inside_str);
+}
+fn handle_return(value: Expression) -> String {
+    return format!("return {}", handle_expr(value));
+}
+fn handle_function_property(name: String, var_type: Type) -> String {
+    return format!("{} {}", name, handle_type(var_type));
+}
+fn handle_function(
+    name: String,
+    properties: Vec<Expression>,
+    public: bool,
+    output: Option<Type>,
+    inside: Vec<Expression>,
+) -> String {
+    let public_str = if public { "public " } else { "" };
+
+    let mut properties_str = String::new();
+    let length = properties.len();
+    for i in 0..length {
+        let property = properties[i].clone();
+        let last = i == length - 1;
+        let coma_text = if last { "" } else { ", " };
+
+        properties_str += &format!("{}{}", &handle_expr(property), coma_text);
+    }
+    let mut inside_str = String::new();
+    for expr in inside {
+        inside_str += &handle_expr(expr);
+    }
+
+    let output_str = match output {
+        Some(var_type) => &handle_type(var_type),
+        None => "void",
+    };
+
+    return format!(
+        "{} {} {}({}){{\n{}}}",
+        public_str, output_str, name, properties_str, inside_str
+    );
+}
+fn handle_member(member: Expression, name: String) -> String {
+    let member_str = handle_expr(member);
+
+    return format!("{}.{}", member_str, name);
+}
+
 fn handle_array_initialization(properties: Vec<Expression>) -> String {
     let mut properties_text = String::new();
-    for property in properties {
+    let length = properties.len();
+    for i in 0..length {
+        let property = properties[i].clone();
         match property {
             Expression::Keyword(TokenKind::SemiColon) => continue,
             _ => {}
         }
-        properties_text += &format!("{},", &handle_expr(property));
+        //  it has to be + 2 because the last property is semicolon that is skipped!
+        let coma_text = if i + 2 == length { "" } else { ", " };
+        properties_text += &format!("{}{}", &handle_expr(property), coma_text);
     }
-    return format!("{{ {} }};\n", properties_text);
+    return format!("{{{}}}", properties_text);
 }
 
 fn handle_class_instantiation(name: String, properties: Vec<Expression>) -> String {

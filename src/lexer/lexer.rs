@@ -311,6 +311,7 @@ pub fn reserved_symbols() -> HashMap<String, TokenKind> {
         ("else".to_string(), TokenKind::Else),
         ("for".to_string(), TokenKind::For),
         ("while".to_string(), TokenKind::While),
+        ("return".to_string(), TokenKind::Return),
     ]);
 }
 
@@ -331,7 +332,10 @@ fn handle_number_tokenization(lexer: &mut Lexer) {
     loop {
         let char = &lexer.source[current_index];
         current_index += 1;
-        if !is_number(char) && char != "." {
+
+        if (!is_number(char) && char != ".") ||/* makes iterators inside numbers work like: 0..100*/
+        (char == "." &&  /* next char because the index is increased just before */&lexer.source[current_index ] == ".")
+        {
             break;
         }
         value += &char.to_string();

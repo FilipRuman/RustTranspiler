@@ -34,6 +34,7 @@ pub enum TokenKind {
     PlusPlus,
     MinusMinus,
 
+    Return,
     Plus,
     Minus,
     Star,

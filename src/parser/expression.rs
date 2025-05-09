@@ -29,7 +29,6 @@ pub enum Expression {
         name: String,
         mutable: bool,
     },
-    //TODO:
     Grouping(Box<Expression>),
     Class {
         public: bool,
@@ -57,6 +56,154 @@ pub enum Expression {
     ArrayInitialization {
         properties: Vec<Expression>,
     },
+    Function {
+        name: String,
+        properties: Vec<Expression>,
+        public: bool,
+        output: Option<Type>,
+        inside: Vec<Expression>,
+    },
+    FunctionProperty {
+        var_name: String,
+        var_type: Type,
+    },
+    MemberExpr {
+        member: Box<Expression>,
+        name: String,
+    },
+    Return {
+        value: Box<Expression>,
+    },
+    If {
+        condition: Box<Expression>,
+        inside: Vec<Expression>,
+    },
+    While {
+        condition: Box<Expression>,
+        inside: Vec<Expression>,
+    },
+    For {
+        iterator_name: String,
+        iteration_target: Box<Expression>,
+        inside: Vec<Expression>,
+    },
+    Range {
+        from: Box<Expression>,
+        to: Box<Expression>,
+    },
+}
+pub fn parse_return(parser: &mut Parser) -> Expression {
+    parser.expect(&TokenKind::Return);
+    let value = parse_expr(parser, &0);
+
+    Expression::Return {
+        value: Box::new(value),
+    }
+}
+pub fn parse_for(parser: &mut Parser) -> Expression {
+    parser.expect(&TokenKind::For);
+    let iterator_name = parser.expect(&TokenKind::Identifier).value.to_owned();
+    parser.expect(&TokenKind::In);
+    let iteration_target = parse_expr(parser, &0);
+
+    parser.expect(&TokenKind::OpenCurly);
+    let mut inside = Vec::new();
+    while parser.current_token_kind() != &TokenKind::CloseCurly {
+        inside.push(parse_expr(parser, &0));
+    }
+    parser.expect(&TokenKind::CloseCurly);
+    return Expression::For {
+        iterator_name,
+        iteration_target: Box::new(iteration_target),
+        inside,
+    };
+}
+pub fn parse_if(parser: &mut Parser) -> Expression {
+    parser.expect(&TokenKind::If);
+    let condition = parse_expr(parser, &0);
+    parser.expect(&TokenKind::OpenCurly);
+    let mut inside = Vec::new();
+    while parser.current_token_kind() != &TokenKind::CloseCurly {
+        inside.push(parse_expr(parser, &0));
+    }
+    parser.expect(&TokenKind::CloseCurly);
+
+    return Expression::If {
+        condition: Box::new(condition),
+        inside,
+    };
+}
+pub fn parse_while(parser: &mut Parser) -> Expression {
+    parser.expect(&TokenKind::While);
+    let condition = parse_expr(parser, &0);
+    parser.expect(&TokenKind::OpenCurly);
+    let mut inside = Vec::new();
+    while parser.current_token_kind() != &TokenKind::CloseCurly {
+        inside.push(parse_expr(parser, &0));
+    }
+    parser.expect(&TokenKind::CloseCurly);
+
+    return Expression::While {
+        condition: Box::new(condition),
+        inside,
+    };
+}
+pub fn parse_range(parser: &mut Parser, _: &i8, left: Expression) -> Expression {
+    parser.expect(&TokenKind::DotDot);
+    let to = parse_expr(parser, &0);
+
+    return Expression::Range {
+        to: Box::new(to),
+        from: Box::new(left),
+    };
+}
+pub fn parse_function(parser: &mut Parser) -> Expression {
+    parser.expect(&TokenKind::Fn);
+
+    let public = if parser.current_token_kind() == &TokenKind::Pub {
+        parser.expect(&TokenKind::Pub);
+        true
+    } else {
+        false
+    };
+
+    let name = parser.expect(&TokenKind::Identifier).value.to_owned();
+    parser.expect(&TokenKind::OpenParen);
+
+    let mut properties = Vec::new();
+    while parser.current_token_kind() != &TokenKind::CloseParen {
+        properties.push(Expression::FunctionProperty {
+            var_name: parser.expect(&TokenKind::Identifier).value.to_owned(),
+            var_type: parse_type(parser, &0),
+        });
+        if parser.current_token_kind() == &TokenKind::Comma {
+            parser.advance();
+        }
+    }
+
+    parser.expect(&TokenKind::CloseParen);
+    let output = if parser.current_token_kind() == &TokenKind::Arrow {
+        parser.expect(&TokenKind::Arrow);
+        Some(parse_type(parser, &0))
+    } else {
+        None
+    };
+
+    parser.expect(&TokenKind::OpenCurly);
+    let mut inside = Vec::new();
+    while parser.current_token_kind() != &TokenKind::CloseCurly {
+        inside.push(parse_expr(parser, &0));
+    }
+
+    parser.expect(&TokenKind::CloseCurly);
+
+    return Expression::Function {
+        name,
+        properties,
+        public,
+        output,
+        inside,
+    };
 }
 
 pub fn parse_expr(parser: &mut Parser, bp: &i8) -> Expression {
@@ -230,6 +377,16 @@ pub fn parse_binary_expr(parser: &mut Parser, bp: &i8, left: Expression) -> Expr
         r: Box::new(right),
     }
 }
+pub fn parse_member_expr(parser: &mut Parser, _: &i8, left: Expression) -> Expression {
+    parser.expect(&TokenKind::Dot);
+    let name = parser.expect(&TokenKind::Identifier).value.to_string();
+
+    Expression::MemberExpr {
+        member: Box::new(left),
+        name,
+    }
+}
+
 pub fn parse_grouping(parser: &mut Parser) -> Expression {
     parser.advance();
 
