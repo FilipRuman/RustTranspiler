@@ -3,10 +3,10 @@ use std::collections::HashMap;
 use crate::{
     expression::{
         self, parse_array_initialization, parse_assignment, parse_binary_expr, parse_class,
-        parse_class_instantiation, parse_expr, parse_for, parse_function, parse_grouping,
-        parse_identifier_nod, parse_if, parse_keyword_nod, parse_member_expr, parse_number_nod,
-        parse_prefix_nod, parse_range, parse_return, parse_string_nod, parse_variable_declaration,
-        parse_while, Expression,
+        parse_class_instantiation, parse_expr, parse_for, parse_function, parse_function_call,
+        parse_grouping, parse_identifier_nod, parse_if, parse_keyword_nod, parse_member_expr,
+        parse_number_nod, parse_prefix_nod, parse_range, parse_return, parse_string_nod,
+        parse_variable_declaration, parse_while, Expression,
     },
     parser::{self, Parser},
     tokens::TokenKind,
@@ -85,10 +85,12 @@ impl Lookup {
         lookup.led(TokenKind::Dot, 1, parse_member_expr);
         lookup.led(TokenKind::DotDot, 1, parse_range);
 
+        lookup.led(TokenKind::OpenParen, 2, parse_function_call);
+
         lookup.led(TokenKind::OpenCurly, 5, parse_class_instantiation);
         lookup.binding_power_lu.insert(TokenKind::CloseCurly, 0);
 
-        lookup.nod(TokenKind::OpenParen, 0, parse_grouping);
+        lookup.nod(TokenKind::OpenParen, 2, parse_grouping);
         lookup.nod(TokenKind::CloseParen, 0, parse_grouping);
 
         lookup.nod(TokenKind::Fn, 0, parse_function);

@@ -1,4 +1,8 @@
-use std::env::{consts, VarError};
+use core::panic;
+use std::{
+    default,
+    env::{consts, VarError},
+};
 
 use crate::{
     lexer,
@@ -91,6 +95,26 @@ pub enum Expression {
         from: Box<Expression>,
         to: Box<Expression>,
     },
+    FunctionCall {
+        left: Box<Expression>,
+        values: Vec<Expression>,
+    },
+}
+pub fn parse_function_call(parser: &mut Parser, _: &i8, left: Expression) -> Expression {
+    parser.expect(&TokenKind::OpenParen);
+    let mut values = Vec::new();
+    while parser.current_token_kind() != &TokenKind::CloseParen {
+        values.push(parse_expr(parser, &0));
+        if parser.current_token_kind() == &TokenKind::Coma {
+            parser.advance();
+        }
+    }
+    parser.expect(&TokenKind::CloseParen);
+
+    return Expression::FunctionCall {
+        left: Box::new(left),
+        values,
+    };
 }
 pub fn parse_return(parser: &mut Parser) -> Expression {
     parser.expect(&TokenKind::Return);

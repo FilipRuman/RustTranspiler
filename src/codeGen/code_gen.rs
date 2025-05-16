@@ -68,7 +68,21 @@ fn handle_expr(expression: Expression) -> String {
             inside,
         } => handle_for(iterator_name, *iteration_target, inside),
         Expression::Range { from, to } => panic!("encountered range in un expected position"),
+        Expression::FunctionCall { left, values } => handle_function_call(*left, values),
     }
+}
+fn handle_function_call(left: Expression, values: Vec<Expression>) -> String {
+    let mut values_str = String::new();
+    let length = values.len();
+    for i in 0..length {
+        let property = values[i].clone();
+        let last = i == length - 1;
+        let coma_text = if last { "" } else { ", " };
+
+        values_str += &format!("{}{}", &handle_expr(property), coma_text);
+    }
+
+    return format!("{}({})", handle_expr(left), values_str);
 }
 fn handle_for(
     iterator_name: String,

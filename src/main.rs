@@ -22,7 +22,7 @@ mod types;
 // mod statement;
 #[path = "lexer/tokens.rs"]
 mod tokens;
-const INPUT_FILE_PATH: &str = "./CompileTargets/simple.rs";
+const INPUT_FILE_PATH: &str = "./CompileTargets/tic_tac_toe.rs";
 const OUTPUT_FILE_PATH: &str = "./CompileTargets/Output.cs";
 
 fn main() {
