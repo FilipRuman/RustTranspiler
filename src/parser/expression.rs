@@ -2,6 +2,7 @@ use core::panic;
 use std::{
     default,
     env::{consts, VarError},
+    thread::current,
 };
 
 use crate::{
@@ -82,6 +83,15 @@ pub enum Expression {
         condition: Box<Expression>,
         inside: Vec<Expression>,
     },
+    Else {
+        condition: Option<Box<Expression>>,
+        inside: Vec<Expression>,
+    },
+    IndexArray {
+        left: Box<Expression>,
+        indexes: Vec<Expression>,
+    },
+
     While {
         condition: Box<Expression>,
         inside: Vec<Expression>,
@@ -99,13 +109,85 @@ pub enum Expression {
         left: Box<Expression>,
         values: Vec<Expression>,
     },
+    Out {
+        var_type: Option<Type>,
+        var_name: String,
+    },
+}
+pub fn parse_indexing_array(parser: &mut Parser, _: &i8, left: Expression) -> Expression {
+    parser.expect(&TokenKind::OpenBracket);
+    let mut indexes = Vec::new();
+    while parser.current_token_kind() != &TokenKind::CloseBracket {
+        indexes.push(parse_expr(parser, &0));
+        if parser.current_token_kind() == &TokenKind::Comma {
+            parser.advance();
+        }
+    }
+    parser.expect(&TokenKind::CloseBracket);
+
+    return Expression::IndexArray {
+        left: Box::new(left),
+        indexes,
+    };
+}
+
+pub fn parse_else(parser: &mut Parser) -> Expression {
+    parser.expect(&TokenKind::Else);
+
+    match parser.current_token_kind() {
+        TokenKind::If => {
+            parser.expect(&TokenKind::If);
+
+            let condition = parse_expr(parser, &0);
+            parser.expect(&TokenKind::OpenCurly);
+            let mut inside = Vec::new();
+            while parser.current_token_kind() != &TokenKind::CloseCurly {
+                inside.push(parse_expr(parser, &0));
+            }
+            parser.expect(&TokenKind::CloseCurly);
+
+            return Expression::Else {
+                condition: Some(Box::new(condition)),
+                inside,
+            };
+        }
+        _ => {
+            parser.expect(&TokenKind::OpenCurly);
+            let mut inside = Vec::new();
+            while parser.current_token_kind() != &TokenKind::CloseCurly {
+                inside.push(parse_expr(parser, &0));
+            }
+            parser.expect(&TokenKind::CloseCurly);
+
+            return Expression::Else {
+                condition: None,
+                inside,
+            };
+        }
+    }
+}
+
+pub fn parse_out(parser: &mut Parser) -> Expression {
+    // out i32 name;
+
+    // move past out
+    parser.advance();
+    let var_type = if parser.current_token_kind() == &TokenKind::Identifier {
+        let output = Some(parse_type(parser, &0));
+        output
+    } else {
+        None
+    };
+
+    let var_name = (&parser.expect(&TokenKind::Identifier).value).to_owned();
+    return Expression::Out { var_type, var_name };
 }
 pub fn parse_function_call(parser: &mut Parser, _: &i8, left: Expression) -> Expression {
     parser.expect(&TokenKind::OpenParen);
     let mut values = Vec::new();
     while parser.current_token_kind() != &TokenKind::CloseParen {
         values.push(parse_expr(parser, &0));
-        if parser.current_token_kind() == &TokenKind::Coma {
+        if parser.current_token_kind() == &TokenKind::Comma {
             parser.advance();
         }
     }

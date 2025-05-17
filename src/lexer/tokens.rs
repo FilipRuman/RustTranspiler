@@ -1,5 +1,6 @@
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum TokenKind {
+    Tab,
     WhiteSpace,
     OpenBracket,
     CloseBracket,
@@ -11,7 +12,6 @@ pub enum TokenKind {
 
     DotDot,
     Dot,
-    Coma,
     Arrow,
 
     Equals,
@@ -62,7 +62,7 @@ pub enum TokenKind {
     If,
     Else,
     While,
-
+    Out,
     Let,
 
     Mut,

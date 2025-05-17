@@ -5,7 +5,10 @@ use crate::{
 #[derive(Clone, Debug)]
 pub enum Type {
     Symbol(String),
-    Array(Box<Type>),
+    Array {
+        left_type: Box<Type>,
+        dimensions: usize,
+    },
 }
 
 pub fn parse_symbol_type(parser: &mut Parser) -> Type {
@@ -15,11 +18,18 @@ pub fn parse_symbol_type(parser: &mut Parser) -> Type {
 
 pub fn parse_array_type(parser: &mut Parser, bp: &i8, left: Type) -> Type {
     debug_type("parse_array_type");
-    // move past [ && ]
     parser.expect(&TokenKind::OpenBracket);
+    let mut dimensions = 0;
+    while parser.current_token_kind() == &TokenKind::Comma {
+        parser.advance();
+        dimensions += 1;
+    }
     parser.expect(&TokenKind::CloseBracket);
 
-    return Type::Array(Box::new(left));
+    return Type::Array {
+        left_type: Box::new(left),
+        dimensions,
+    };
 }
 pub fn parse_type(parser: &mut Parser, bp: &i8) -> Type {
     debug_type(" type:");

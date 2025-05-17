@@ -1,6 +1,6 @@
 use crate::tokens::*;
 use core::str;
-use std::{cmp, collections::HashMap};
+use std::{cmp, collections::HashMap, usize};
 
 struct Pattern {
     kind: TokenKind,
@@ -60,6 +60,7 @@ impl Lexer {
     fn get_patterns() -> Vec<Pattern> {
         return vec![
             Pattern::new(TokenKind::NextLine, "\n"),
+            Pattern::new(TokenKind::Tab, "\t"),
             Pattern::new(TokenKind::WhiteSpace, " "),
             Pattern::new(TokenKind::OpenBracket, "["),
             Pattern::new(TokenKind::CloseBracket, "]"),
@@ -152,7 +153,7 @@ pub fn tokenize(source: String, black_list: Vec<TokenKind>) -> Vec<Token> {
             handle_comments(&mut lexer);
             continue;
         }
-        if at == "\"" {
+        if at == "\"" || at == "$" {
             handle_strings(&mut lexer);
             continue;
         }
@@ -206,9 +207,16 @@ fn handle_comments(lexer: &mut Lexer) {
     });
 }
 fn handle_strings(lexer: &mut Lexer) {
-    // println!("handle_strings");
-    let mut value = "\"".to_string();
     let mut current_index = (lexer.pos + 1) as usize;
+    let format_symbol = if &lexer.source[lexer.pos as usize] == "$" {
+        current_index += 1;
+        "$"
+    } else {
+        ""
+    };
+
+    let mut value = format!("{}\"", format_symbol);
+
     while current_index < lexer.source.len() {
         let char = &lexer.source[current_index];
         current_index += 1;
@@ -219,6 +227,7 @@ fn handle_strings(lexer: &mut Lexer) {
         }
     }
 
+    println!("handle_strings {value}");
     lexer.advance(value.len() as u16);
     lexer.push(Token {
         kind: TokenKind::String,
@@ -296,6 +305,7 @@ fn handle_standard_pattern_tokenization(
 pub fn reserved_symbols() -> HashMap<String, TokenKind> {
     return HashMap::from([
         ("mut".to_string(), TokenKind::Mut),
+        ("out".to_string(), TokenKind::Out),
         ("let".to_string(), TokenKind::Let),
         ("const".to_string(), TokenKind::Const),
         ("enum".to_string(), TokenKind::Enum),
@@ -315,10 +325,10 @@ pub fn reserved_symbols() -> HashMap<String, TokenKind> {
     ]);
 }
 
-const SYMBOLS: [&str; 53] = [
+const SYMBOLS: [&str; 55] = [
     "a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s",
     "t", "u", "v", "w", "x", "y", "z", "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L",
-    "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z", "_",
+    "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z", "_", "\\", "'",
 ];
 
 fn is_symbol(char: &String, beginning: bool) -> bool {

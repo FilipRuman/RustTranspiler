@@ -33,6 +33,7 @@ fn main() {
     let tokens = lexer::tokenize(
         content,
         vec![
+            TokenKind::Tab,
             TokenKind::WhiteSpace,
             TokenKind::Comment,
             TokenKind::NextLine,

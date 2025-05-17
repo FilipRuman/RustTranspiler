@@ -18,7 +18,7 @@ pub fn convert_expressions_to_code(expressions: Vec<Expression>) -> String {
 fn handle_expr(expression: Expression) -> String {
     match expression {
         Expression::Number(value) => value.to_string(),
-        Expression::String(value) => format!("\"{}\"", value),
+        Expression::String(value) => format!("{}", value),
         Expression::Identifier(value) => value,
         Expression::Binary { l, operator, r } => handle_binary_expr(*l, operator, *r),
         Expression::Assignment {
@@ -69,6 +69,51 @@ fn handle_expr(expression: Expression) -> String {
         } => handle_for(iterator_name, *iteration_target, inside),
         Expression::Range { from, to } => panic!("encountered range in un expected position"),
         Expression::FunctionCall { left, values } => handle_function_call(*left, values),
+        Expression::Out { var_type, var_name } => handle_out(var_type, var_name),
+        Expression::Else { condition, inside } => handle_else(condition, inside),
+        Expression::IndexArray { indexes, left } => handle_indexing_array(*left, indexes),
+    }
+}
+fn handle_indexing_array(left: Expression, indexes: Vec<Expression>) -> String {
+    let mut indexes_str = String::new();
+    let length = indexes.len();
+    for i in 0..length {
+        let index = indexes[i].clone();
+        let last = i == length - 1;
+        let coma_text = if last { "" } else { ", " };
+
+        indexes_str += &format!("{}{}", &handle_expr(index), coma_text);
+    }
+
+    return format!("{}[{}]", handle_expr(left), indexes_str);
+}
+
+fn handle_else(condition_option: Option<Box<Expression>>, inside: Vec<Expression>) -> String {
+    match condition_option {
+        Some(condition) => {
+            let condition_str = handle_expr(*condition);
+            let mut inside_str = String::new();
+            for expr in inside {
+                inside_str += &handle_expr(expr);
+            }
+
+            return format!("else if({}){{\n{}}}\n", condition_str, inside_str);
+        }
+        None => {
+            let mut inside_str = String::new();
+            for expr in inside {
+                inside_str += &handle_expr(expr);
+            }
+
+            return format!("else {{\n{}}}\n", inside_str);
+        }
+    }
+}
+
+fn handle_out(var_type_option: Option<Type>, var_name: String) -> String {
+    match var_type_option {
+        Some(var_type) => return format!("out {} {}", handle_type(var_type), var_name),
+        None => return format!("out {}", var_name),
     }
 }
 fn handle_function_call(left: Expression, values: Vec<Expression>) -> String {
@@ -251,26 +296,25 @@ pub fn handle_variable_declaration(
     mutable: bool,
 ) -> String {
     let type_str = handle_type(variable_type);
-    // match variable_type {
-    //     TokenKind::Str => "string",
-    //     TokenKind::I32 => "long",
-    //     TokenKind::I16 => "int",
-    //     TokenKind::U32 => "long",
-    //     TokenKind::U16 => "int",
-    //     TokenKind::Bool => "bool",
-    //
-    //     default => panic!("variable type: {:?} doesn't have a handler", default),
-    // };
-
-    let mut_str = if mutable { "" } else { "const " };
+    let mut_str = ""/* if mutable { "" } else { "const " } */;
 
     return format!("{}{} {}", mut_str, type_str, variable_name);
 }
 fn handle_type(var_type: Type) -> String {
     match var_type {
         Type::Symbol(symbol) => handle_symbol_type(symbol),
-        Type::Array(type_inside) => format!("{}[]", handle_type(*type_inside)),
+        Type::Array {
+            left_type,
+            dimensions,
+        } => handle_array(*left_type, dimensions),
     }
+}
+fn handle_array(left_type: Type, dimensions: usize) -> String {
+    let mut dimensions_str = String::with_capacity(dimensions);
+    for _ in 0..dimensions {
+        dimensions_str += ",";
+    }
+    return format!("{}[{}]", handle_type(left_type), dimensions_str);
 }
 fn handle_symbol_type(symbol: String) -> String {
     match symbol.as_str() {

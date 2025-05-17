@@ -3,10 +3,11 @@ use std::collections::HashMap;
 use crate::{
     expression::{
         self, parse_array_initialization, parse_assignment, parse_binary_expr, parse_class,
-        parse_class_instantiation, parse_expr, parse_for, parse_function, parse_function_call,
-        parse_grouping, parse_identifier_nod, parse_if, parse_keyword_nod, parse_member_expr,
-        parse_number_nod, parse_prefix_nod, parse_range, parse_return, parse_string_nod,
-        parse_variable_declaration, parse_while, Expression,
+        parse_class_instantiation, parse_else, parse_expr, parse_for, parse_function,
+        parse_function_call, parse_grouping, parse_identifier_nod, parse_if, parse_indexing_array,
+        parse_keyword_nod, parse_member_expr, parse_number_nod, parse_out, parse_prefix_nod,
+        parse_range, parse_return, parse_string_nod, parse_variable_declaration, parse_while,
+        Expression,
     },
     parser::{self, Parser},
     tokens::TokenKind,
@@ -82,11 +83,16 @@ impl Lookup {
         lookup.led(TokenKind::GreaterEquals, 1, parse_binary_expr);
         lookup.led(TokenKind::Equals, 1, parse_binary_expr);
 
+        lookup.led(TokenKind::Or, 1, parse_binary_expr);
+        lookup.led(TokenKind::And, 1, parse_binary_expr);
+
         lookup.led(TokenKind::Dot, 1, parse_member_expr);
         lookup.led(TokenKind::DotDot, 1, parse_range);
 
         lookup.led(TokenKind::OpenParen, 2, parse_function_call);
+        lookup.led(TokenKind::OpenBracket, 5, parse_indexing_array);
 
+        lookup.binding_power_lu.insert(TokenKind::CloseBracket, -1);
         lookup.led(TokenKind::OpenCurly, 5, parse_class_instantiation);
         lookup.binding_power_lu.insert(TokenKind::CloseCurly, 0);
 
@@ -95,9 +101,11 @@ impl Lookup {
 
         lookup.nod(TokenKind::Fn, 0, parse_function);
         lookup.nod(TokenKind::If, 0, parse_if);
+        lookup.nod(TokenKind::Else, 0, parse_else);
         lookup.nod(TokenKind::While, 0, parse_while);
         lookup.nod(TokenKind::For, 0, parse_for);
 
+        lookup.nod(TokenKind::Out, 0, parse_out);
         lookup.nod(TokenKind::Let, 0, parse_variable_declaration);
         lookup.nod(TokenKind::Class, 0, parse_class);
 
@@ -110,6 +118,8 @@ impl Lookup {
         lookup.nod(TokenKind::Plus, -99, parse_prefix_nod);
         lookup.nod(TokenKind::Plus, -99, parse_prefix_nod);
 
+        lookup.nod(TokenKind::Not, 0, parse_prefix_nod);
+
         lookup.nod(TokenKind::OpenCurly, 0, parse_array_initialization);
 
         lookup.nod(TokenKind::Return, 0, parse_return);
@@ -118,7 +128,6 @@ impl Lookup {
         lookup.nod(TokenKind::Comma, -1, parse_keyword_nod);
 
         lookup.binding_power_lu.insert(TokenKind::EndOfFile, -1);
-        lookup.binding_power_lu.insert(TokenKind::OpenBracket, 5);
 
         lookup
     }
