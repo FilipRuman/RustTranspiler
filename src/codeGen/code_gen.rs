@@ -136,7 +136,7 @@ fn handle_for(
 ) -> String {
     let loop_str = match iteration_target {
         Expression::Range { from, to } => format!(
-            "for(int {} = {}; {} < {}; {}++;)",
+            "for(int {} = {}; {} < {}; {}++)",
             iterator_name,
             handle_expr(*from),
             iterator_name,
