@@ -1,3 +1,6 @@
+let u16 MapX = 7;
+let u16 MapY = 7;
+
 class Test{
 u32 x;
 u32 y;
@@ -12,7 +15,7 @@ let i32[] test_array = {1;2;};
 
 
 let i32 x = name.x;
-fn pub TestName(i32 x, u32 y, str name) -> Test{
+fn pub TestName(u32 x, u32 y, str name) -> Test{
 
     if x == 1 {
         x = 10;
