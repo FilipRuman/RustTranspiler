@@ -77,11 +77,11 @@ impl Lookup {
         lookup.led(TokenKind::Star, 3, parse_binary_expr);
         lookup.led(TokenKind::Slash, 3, parse_binary_expr);
 
-        lookup.led(TokenKind::Less, 1, parse_binary_expr);
-        lookup.led(TokenKind::LessEquals, 1, parse_binary_expr);
-        lookup.led(TokenKind::Greater, 1, parse_binary_expr);
-        lookup.led(TokenKind::GreaterEquals, 1, parse_binary_expr);
-        lookup.led(TokenKind::Equals, 1, parse_binary_expr);
+        lookup.led(TokenKind::Less, 4, parse_binary_expr);
+        lookup.led(TokenKind::LessEquals, 4, parse_binary_expr);
+        lookup.led(TokenKind::Greater, 4, parse_binary_expr);
+        lookup.led(TokenKind::GreaterEquals, 4, parse_binary_expr);
+        lookup.led(TokenKind::Equals, 4, parse_binary_expr);
 
         lookup.led(TokenKind::Or, 1, parse_binary_expr);
         lookup.led(TokenKind::And, 1, parse_binary_expr);
