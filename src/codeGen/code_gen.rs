@@ -185,7 +185,7 @@ fn handle_return(value: Expression) -> String {
     return format!("return {}", handle_expr(value));
 }
 fn handle_function_property(name: String, var_type: Type) -> String {
-    return format!("{} {}", name, handle_type(var_type));
+    return format!("{} {}", handle_type(var_type), name);
 }
 fn handle_function(
     name: String,

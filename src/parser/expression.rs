@@ -279,8 +279,9 @@ pub fn parse_function(parser: &mut Parser) -> Expression {
     let mut properties = Vec::new();
     while parser.current_token_kind() != &TokenKind::CloseParen {
         properties.push(Expression::FunctionProperty {
-            var_name: parser.expect(&TokenKind::Identifier).value.to_owned(),
             var_type: parse_type(parser, &0),
+
+            var_name: parser.expect(&TokenKind::Identifier).value.to_owned(),
         });
         if parser.current_token_kind() == &TokenKind::Comma {
             parser.advance();
